@@ -7,6 +7,11 @@ before_install:
 install:
 - npm install --no-save
 - npm test
+before_script:
+- "export DISPLAY=:99.0"
+- "sh -e /etc/init.d/xvfb start"
+- sleep 3
+- fluxbox >/dev/null 2>&1 &
 after_success:
 - git fetch
 - "./bin/upgrade.sh"
@@ -28,8 +33,3 @@ addons:
     packages:
       - google-chrome-stable fluxbox
 
-before_script:
-  - "export DISPLAY=:99.0"
-  - "sh -e /etc/init.d/xvfb start"
-  - sleep 3
-  - fluxbox >/dev/null 2>&1 &
