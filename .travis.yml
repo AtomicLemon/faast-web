@@ -6,7 +6,6 @@ before_install:
 - npm install -g "npm@$(jq -r '.engines.npm' package.json)"
 install:
 - npm install --no-save
-- npm test
 before_script:
 - "export DISPLAY=:99.0"
 - "sh -e /etc/init.d/xvfb start"
