@@ -7,3 +7,5 @@ dist-dev/
 build/
 tmp/
 dist/
+test/e2e/reports/*
+.testcaferc.json
