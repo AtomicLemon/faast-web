@@ -24,7 +24,7 @@
   },
   "scripts": {
     "start": "ws --config-file etc/lws.config.prod.js",
-    "test": "testcafe chrome,firefox test/e2e/test.js --app \"npm run start\"",
+    "test": "npm run lint && npm run test:e2e",
     "test:e2e": "gulp test:e2e",
     "test:local": "testcafe",
     "dev:app": "cross-env NODE_ENV=development webpack-dev-server --config etc/webpack.config.app.js --progress",

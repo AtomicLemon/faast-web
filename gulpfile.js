@@ -29,7 +29,9 @@ gulp.task('lint', gulp.parallel(['lint:js', 'lint:ts']))
 gulp.task('test:e2e', () =>
   gulp.src(path.join(dirs.testE2e, 'test.js'))
     .pipe(testcafe({
-      browsers: ['chrome'],
+      // https://github.com/DevExpress/gulp-testcafe/blob/master/index.js
+      app: 'npm run start',
+      browsers: ['chrome', 'firefox'],
       reporter: [
         {
           name: 'spec'
@@ -37,14 +39,8 @@ gulp.task('test:e2e', () =>
         {
           name: 'xunit',
           output: fs.createWriteStream(path.join(dirs.testE2eReports, 'report.xml'))
-        },
-      ],
-      filter: null,
-      screenshotsPath: null,
-      takeScreenshotsOnFail: false,
-      skipJsErrors: false,
-      quarantineMode: false,
-      selectorTimeout: 10000
+        }
+      ]
     })))
 
 gulp.task('compile:app', run('webpack --config etc/webpack.config.app.js'))
