@@ -150,7 +150,12 @@ export const createOrder = (swap) => (dispatch) => {
           },
         }))
           .then((order) => {
-            return finish(null, order)
+            const updatedFields = {
+              ...order,
+              sendWalletId: sendWalletInstance ? sendWalletInstance.getId() : swap.sendWalletId,
+              receiveWalletId: receiveWalletInstance ? receiveWalletInstance.getId() : swap.receiveWalletId
+            }
+            return finish(null, updatedFields)
           })
       })
       .catch((e) => {
@@ -182,6 +187,10 @@ export const createSwapTx = (swap, options) => (dispatch) => Promise.resolve().t
 
 export const ensureSwapTxCreated = (swap, options) => (dispatch) => Promise.resolve().then(() => {
   if (swap && !swap.txId && swap.sendWalletId) {
+    options = {
+      ...options,
+      extraId: swap.depositAddressExtraId
+    }
     return dispatch(createSwapTx(swap, options))
   }
 })
@@ -196,6 +205,10 @@ export const createSwap = (swapParams, options) => (dispatch, getState) => {
         throw new Error(swap.error)
       }
       swap.id = swapId
+      options = {
+        ...options,
+        extraId: swap.depositAddressExtraId
+      }
       if (swap.sendWalletId) {
         return dispatch(createSwapTx(swap, options))
       }

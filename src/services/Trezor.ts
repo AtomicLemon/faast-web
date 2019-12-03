@@ -1,7 +1,6 @@
 if (typeof window === 'undefined') {
   throw new Error(`You really shouldnt be importing ${__filename} outsite of the app`)
 }
-console.log(process.env)
 
 import {
   ResponseSuccess,
@@ -65,6 +64,27 @@ function handleResult<T>(result: ResponseMessage<T>): T {
 }
 
 export class TrezorService {
+
+  getRippleAddress(derivationPath: string) {
+    return TrezorConnect.rippleGetAddress(log.debugInline('TrezorConnect.rippleGetAddress', {
+      path: derivationPath,
+    })).then(handleResult)
+  }
+
+  signRippleTransaction(derivationPath: string, txObj: {
+    fee: string,
+    flags: number,
+    sequence: number,
+    payment: {
+        amount: string,
+        destination: string,
+    },
+  }): Promise<any> {
+    return TrezorConnect.rippleSignTransaction({
+      path: derivationPath,
+      transaction: txObj,
+    }).then(handleResult)
+  }
 
   getXPubKey(assetSymbol: string, derivationPath: string): Promise<PublicKey> {
     return TrezorConnect.getPublicKey(log.debugInline('TrezorConnect.getPublicKey', {

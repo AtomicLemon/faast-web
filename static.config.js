@@ -6,6 +6,7 @@ import merge from 'webpack-merge'
 import ExtractTextPlugin from 'extract-text-webpack-plugin'
 import { pick, get } from 'lodash'
 import urlJoin from 'url-join'
+import retry from 'p-retry'
 
 import Wallets from './src/config/walletTypes'
 import { translations } from './src/config/translations'
@@ -43,6 +44,16 @@ const generateCombinationsFromArray = (array, property) => {
     if (i == array.length - 1) {
       return results
     }
+  }
+}
+
+/** Get critical data, fail process on error */
+async function criticalGet(url, config) {
+  try {
+    return await retry(() => axios.get(url, config), { retries: 5, randomize: true, minTimeout: 2000 })
+  } catch (e) {
+    console.error('Critical request failed, aborting build', e)
+    process.exit(1)
   }
 }
 
@@ -93,8 +104,7 @@ const generateRoutes = ({ mediumPosts, supportedAssets, supportedWallets }) => {
             supportedAssets,
             translations: t.translations,
             meta: {
-              title: 'Full List of Supported Cryptocurrencies - Faa.st',
-              description: 'View a comprehnsive table of cryptocurrencies currently available to trade on Faa.st exchange.',
+              ...siteConfig.pageMeta.supportedAssets(),
               language: t.code,
             }
           }),
@@ -124,8 +134,7 @@ const generateRoutes = ({ mediumPosts, supportedAssets, supportedWallets }) => {
                   descriptions,
                   translations: t.translations,
                   meta: {
-                    title: `Instantly ${type} ${name} (${symbol}) - Faa.st`,
-                    description: `Safely trade your ${name} crypto directly from your hardware or software wallet. View ${name} (${symbol}) pricing charts, market cap, daily volume and other coin data.`,
+                    ...siteConfig.pageMeta.asset({ type, symbol, name }),
                     language: t.code,
                   }
                 }
@@ -138,10 +147,10 @@ const generateRoutes = ({ mediumPosts, supportedAssets, supportedWallets }) => {
           noindex: true,
           component: 'src/site/pages/Wallets',
           getData: () => ({
-            supportedWallets
+            supportedWallets,
           }),
           children: supportedWallets.map(wallet => {
-            const metaName = wallet.name.replace(' Wallet', '')
+            const name = wallet.name.replace(' Wallet', '')
             const urlName = wallet.name.replace(/\s+/g, '-').toLowerCase()
             return {
               path: `/${urlName}`,
@@ -150,8 +159,7 @@ const generateRoutes = ({ mediumPosts, supportedAssets, supportedWallets }) => {
                 wallet,
                 translations: t.translations,
                 meta: {
-                  title: `Trade Your Crypto from your ${metaName.replace(' Wallet', '')} Wallet - Faa.st`,
-                  description: `Safely trade your crypto directly from your ${metaName} Wallet. Connect your ${metaName} wallet and trade 100+ cryptocurrencies on Faa.st.`,
+                  ...siteConfig.pageMeta.wallet({ name }),
                   language: t.code,
                 }
               }),
@@ -165,14 +173,13 @@ const generateRoutes = ({ mediumPosts, supportedAssets, supportedWallets }) => {
             mediumPosts,
             translations: t.translations,
             meta: {
-              title: 'Faa.st Cryptocurrency Blog',
-              description: 'Blog posts about trading on Faa.st as well as the state of crypto including regulation, pricing, wallets, and mining.',
+              ...siteConfig.pageMeta.blog(),
               language: t.code,
             },
             bgColor: '#F5F7F8'
           }),
           children: await Promise.all(mediumPosts.map(async post => {
-            let mediumPost = await axios.get(`https://medium.com/faast/${post.uniqueSlug}?format=json`)
+            let mediumPost = await criticalGet(`https://medium.com/faast/${post.uniqueSlug}?format=json`)
             mediumPost = JSON.parse(mediumPost.data.replace('])}while(1);</x>', ''))
             return ({
               path: `/${post.uniqueSlug}`,
@@ -181,8 +188,7 @@ const generateRoutes = ({ mediumPosts, supportedAssets, supportedWallets }) => {
                 mediumPost,
                 translations: t.translations,
                 meta: {
-                  title: `${post.title} - Faa.st Blog`,
-                  description: `${post.virtuals.subtitle}`,
+                  ...siteConfig.pageMeta.blogPost({ post }),
                   language: t.code,
                 },
                 bgColor: '#F5F7F8'
@@ -196,8 +202,7 @@ const generateRoutes = ({ mediumPosts, supportedAssets, supportedWallets }) => {
           getData: async () => ({
             translations: t.translations,
             meta: {
-              title: 'Faa.st Market Maker Beta Program',
-              description: 'Earn interest on your Bitcoin by fulfilling trades placed on the Faa.st marketplace. Sign up for the Beta now.',
+              ...siteConfig.pageMeta.marketMaker(),
               language: t.code,
             },
           }),
@@ -208,8 +213,7 @@ const generateRoutes = ({ mediumPosts, supportedAssets, supportedWallets }) => {
           getData: async () => ({
             translations: t.translations,
             meta: {
-              title: 'Cryptocurrency Exchange Terms & Conditions - Faa.st',
-              description: 'Read the necessary terms and conditions to follow while trading using Faa.st.',
+              ...siteConfig.pageMeta.terms(),
               language: t.code,
             }
           }),
@@ -304,8 +308,7 @@ const generateRoutes = ({ mediumPosts, supportedAssets, supportedWallets }) => {
           getData: async () => {
             return {
               meta: {
-                title: 'Privacy Policy - Faa.st',
-                description: "Our stance on our user's privacy and how you can trade crypto without the risk of losing funds.",
+                ...siteConfig.pageMeta.privacy(),
                 language: t.code,
               },
               translations: t.translations,
@@ -318,8 +321,7 @@ const generateRoutes = ({ mediumPosts, supportedAssets, supportedWallets }) => {
           getData: async () => {
             return {
               meta: {
-                title: 'Keep up with Crypto and Sign Up for the Faa.st Newsletter',
-                description: 'Stay up-to-date with all things Faa.st crypto exchange with our newsletter',
+                ...siteConfig.pageMeta.newsletter(),
                 language: t.code,
               },
               translations: t.translations,
@@ -332,8 +334,7 @@ const generateRoutes = ({ mediumPosts, supportedAssets, supportedWallets }) => {
           getData: async () => {
             return {
               meta: {
-                title: 'Exchange Fees and Pricing - Faa.st',
-                description: 'Faa.st enables users to trade crypto from their wallet for low and transparent fees.',
+                ...siteConfig.pageMeta.pricing(),
                 language: t.code,
               },
               translations: t.translations,
@@ -347,8 +348,7 @@ const generateRoutes = ({ mediumPosts, supportedAssets, supportedWallets }) => {
           getData: async () => {
             return {
               meta: {
-                title: '404 - Faa.st',
-                description: 'Unable to find the page you were looking for.',
+                ...siteConfig.pageMeta.notFound(),
                 language: t.code,
               },
               translations: translations[0].translations,
@@ -376,7 +376,7 @@ export default {
   }),
   Document,
   getRoutes: async () => {
-    const { data: assets } = await axios.get('https://api.faa.st/api/v2/public/currencies', {
+    const { data: assets } = await criticalGet('https://api.faa.st/api/v2/public/currencies', {
       params: {
         include: 'marketInfo'
       }
@@ -384,7 +384,7 @@ export default {
     const supportedAssets = assets.filter(({ deposit, receive }) => deposit || receive)
       .map((asset) => ({ ...pick(asset, ['symbol', 'name', 'iconUrl', 'deposit', 'receive', 'cmcIDno']), marketCap: asset.marketInfo.quote.USD.market_cap || 0 }))
     const supportedWallets = Object.values(Wallets)
-    let mediumProfile = await axios.get('https://medium.com/faast?format=json')
+    let mediumProfile = await criticalGet('https://medium.com/faast?format=json')
     mediumProfile = JSON.parse(mediumProfile.data.replace('])}while(1);</x>', ''))
     let mediumPosts = Object.values(mediumProfile.payload.references.Post)
     let dbPosts = []

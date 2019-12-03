@@ -273,7 +273,7 @@ const SwapStepOne = ({
                 )}
               </Col>
             </Row>
-            <div className='mt-2 mb-4'>
+            <div className='mt-0 mb-2'>
               <Checkbox
                 label={
                   <T tag='small' i18nKey='app.widget.acceptTerms' className='pl-1 text-white'>I accept the 
@@ -403,10 +403,10 @@ export default compose(
     onSubmit: ({
       sendSymbol, receiveAsset, sendAsset,
       createSwap, openViewOnly, push, estimatedField,
-      ethSendBalanceAmount, t
+      ethSendBalanceAmount, t, fullBalanceAmount
     }) => async (values) => {
       const { symbol: receiveSymbol, ERC20 } = receiveAsset
-      let { sendAmount, receiveAddress, refundAddress, sendWalletId, receiveWalletId, receiveAmount, extraWithdrawalField, extraRefundDepositField } = values
+      let { sendAmount, receiveAddress, refundAddress, sendWalletId, receiveAmount, receiveWalletId, extraWithdrawalField, extraRefundDepositField } = values
       if (receiveSymbol == 'ETH' || ERC20) {
         receiveAddress = toChecksumAddress(receiveAddress)
       }
@@ -416,6 +416,11 @@ export default compose(
       if (sendAsset.ERC20 && parseFloat(ethSendBalanceAmount) === 0) {
         throw new SubmissionError({
           refundAddress: t('app.widget.notEnoughEth', 'This wallet does not have enough ETH to cover the gas fees. Please deposit some ETH and try again.'),
+        })
+      }
+      if (sendSymbol === 'XRP' && toBigNumber(fullBalanceAmount).minus(toBigNumber(sendAmount)).lt(20)) {
+        throw new SubmissionError({
+          refundAddress: t('app.widget.notEnoughXrp', 'Unable to send because XRP wallets must have a balance of 20 XRP.'),
         })
       }
       try {
@@ -452,9 +457,9 @@ export default compose(
         sendAmount: sendAmount && estimatedField !== 'send' ? toBigNumber(sendAmount).round(sendAsset.decimals) : undefined,
         sendWalletId,
         receiveSymbol,
-        receiveWalletId,
         receiveAddress,
         refundAddress,
+        receiveWalletId,
         receiveAmount: sendAmount && estimatedField !== 'receive' ? toBigNumber(receiveAmount).round(receiveAsset.decimals) : undefined,
         extraWithdrawalField,
         extraRefundDepositField

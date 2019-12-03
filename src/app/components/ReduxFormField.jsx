@@ -15,7 +15,7 @@ const RenderInput = (props) => {
     addonPrepend, addonAppend, row, className, inputClass,
     labelProps, labelClass, labelCol, inputCol, autoFocus,
     renderInput, helpText, style, requiredLabel, children, inputGroupClass,
-    inputGroupStyle
+    inputGroupStyle, formGroupColDisplay = 'block'
   } = props
   let { inputProps, input: reduxFormInput } = props
   const check = ['checkbox', 'radio'].includes(type)
@@ -41,11 +41,14 @@ const RenderInput = (props) => {
   )
 
   const feedbackElement = (
-    <Fragment>
-      {touched && error && (<FormFeedback className='d-block'>{error}</FormFeedback>)}
-      {touched && warning && (<FormFeedback className='d-block text-warning'>{warning}</FormFeedback>)}
-      {helpText}
-    </Fragment>
+    type !== 'hidden' && (
+      <div style={{ height: 30 }}>
+        {touched && error && (<FormFeedback className='d-block'>{error}</FormFeedback>)}
+        {touched && warning && (<FormFeedback className='d-block text-warning'>{warning}</FormFeedback>)}
+        {(!error || !touched) && helpText}
+        {!helpText && (<FormFeedback className='d-block'></FormFeedback>)}
+      </div>
+    )
   )
 
   const renderAddon = (addon) => typeof addon === 'function' ? addon(inputProps) : addon
@@ -84,7 +87,7 @@ const RenderInput = (props) => {
     <FormGroup className={className} row={row} check={check} style={style}>
       {labelPosition === 'prepend' && labelElement}
       {inputCol
-        ? (<Col {...inputCol}>{inputGroupElement}</Col>)
+        ? (<Col style={{ display: formGroupColDisplay }} {...inputCol}>{inputGroupElement}</Col>)
         : (inputGroupElement)}
       {labelPosition === 'append' && labelElement}
     </FormGroup>
